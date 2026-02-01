@@ -2,7 +2,7 @@
 ## Title: Auto Cage Reborn
 ## Notes: Automatically cage duplicate battle pets
 ## Author: I_AM_T3X
-## Version: 2.0.0
+## Version: 1.0.0
 ## SavedVariables: AutoCageRebornDB
 ## Dependencies: Blizzard_Collections
 
