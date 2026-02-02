@@ -401,43 +401,82 @@ end
 -- UI Creation
 -- ============================================================================
 function AutoCageReborn:InitUI()
-    if State.hooksInstalled or not PetJournal then return end
-    if C_AddOns.IsAddOnLoaded("Rematch") then return end
+    if State.hooksInstalled then return end
     
-    local btn = CreateFrame("Button", "AutoCageReborn_Button", PetJournal, "UIPanelButtonTemplate")
-    btn:SetSize(150, 22)
-    btn:SetPoint("LEFT", PetJournalSummonButton, "RIGHT", 4, 0)
-    btn:SetText(GetString(L.BUTTON_DUPLICATE_PETS))
-    btn:SetScript("OnClick", function() AutoCageReborn:ScanAndCage() end)
-    btn:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(GetString(L.BUTTON_DUPLICATE_PETS), 1, 1, 1)
-        GameTooltip:AddLine(GetString(L.BUTTON_DUPLICATE_PETS_TOOLTIP), nil, nil, nil, true)
-        GameTooltip:Show()
+    C_Timer.After(1.0, function()
+        if State.hooksInstalled then return end
+        
+        local isRematch = C_AddOns.IsAddOnLoaded("Rematch")
+        local parent = isRematch and (_G["RematchFrame"] or _G["RematchPetPanel"] or PetJournalFrame or PetJournal) or (PetJournalFrame or PetJournal)
+        
+        -- Create Cage Button
+        local btn = CreateFrame("Button", "AutoCageReborn_Button", parent, "UIPanelButtonTemplate")
+        btn:SetSize(150, 24)
+        btn:SetText(GetString(L.BUTTON_DUPLICATE_PETS))
+        btn:Show()
+        
+        -- Create Checkbox
+        local check = CreateFrame("CheckButton", "AutoCageReborn_CheckButton", parent, "UICheckButtonTemplate")
+        check:SetChecked(State.db.enabled)
+        check:Show()
+        
+        if isRematch then
+            -- Rematch: Create container frame with styling
+            local container = CreateFrame("Frame", "AutoCageReborn_Container", parent, "TooltipBackdropTemplate")
+            container:SetSize(400, 34)
+            container:SetPoint("BOTTOM", parent, "TOP", 0, -2)
+            
+            -- Reparent button and checkbox to container
+            btn:SetParent(container)
+            btn:ClearAllPoints()
+            btn:SetPoint("LEFT", container, "LEFT", 10, 0)
+            
+            check:SetParent(container)
+            check:ClearAllPoints()
+            check:SetPoint("LEFT", btn, "RIGHT", 12, 0)
+            
+            container:Show()
+        else
+            -- Regular Pet Journal: No container, position beside Summon button
+            btn:SetPoint("LEFT", PetJournalSummonButton, "RIGHT", 6, 0)
+            check:SetPoint("LEFT", btn, "RIGHT", 8, 0)
+        end
+        
+        -- Configure checkbox text
+        local checkText = _G[check:GetName() .. "Text"]
+        checkText:SetText(GetString(L.CHECKBOX_AUTO))
+        checkText:SetPoint("LEFT", check, "RIGHT", -2, 0)
+        if isRematch then
+            checkText:SetWidth(200)
+            checkText:SetJustifyH("LEFT")
+        end
+        
+        -- Scripts
+        btn:SetScript("OnClick", function() AutoCageReborn:ScanAndCage() end)
+        btn:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(GetString(L.BUTTON_DUPLICATE_PETS), 1, 1, 1)
+            GameTooltip:AddLine(GetString(L.BUTTON_DUPLICATE_PETS_TOOLTIP), nil, nil, nil, true)
+            GameTooltip:Show()
+        end)
+        btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        
+        check:SetScript("OnClick", function(self)
+            State.db.enabled = self:GetChecked()
+            local msg = State.db.enabled and L.AUTO_ENABLED or L.AUTO_DISABLED
+            Print(GetString(msg), State.db.enabled and "cff00ff00" or "cffff0000")
+        end)
+        
+        check:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(GetString(L.CHECKBOX_AUTO), 1, 1, 1)
+            GameTooltip:AddLine(GetString(L.CHECKBOX_AUTO_TOOLTIP), nil, nil, nil, true)
+            GameTooltip:Show()
+        end)
+        check:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        
+        State.hooksInstalled = true
     end)
-    btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    
-    local check = CreateFrame("CheckButton", "AutoCageReborn_CheckButton", PetJournal, "UICheckButtonTemplate")
-    check:SetPoint("LEFT", btn, "RIGHT", 10, 0)
-    check:SetChecked(State.db.enabled)
-    _G[check:GetName() .. "Text"]:SetText(GetString(L.CHECKBOX_AUTO))
-    _G[check:GetName() .. "Text"]:SetPoint("LEFT", check, "RIGHT", -2, 0)
-    
-    check:SetScript("OnClick", function(self)
-        State.db.enabled = self:GetChecked()
-        local msg = State.db.enabled and L.AUTO_ENABLED or L.AUTO_DISABLED
-        Print(GetString(msg), State.db.enabled and "cff00ff00" or "cffff0000")
-    end)
-    
-    check:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(GetString(L.CHECKBOX_AUTO), 1, 1, 1)
-        GameTooltip:AddLine(GetString(L.CHECKBOX_AUTO_TOOLTIP), nil, nil, nil, true)
-        GameTooltip:Show()
-    end)
-    check:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    
-    State.hooksInstalled = true
 end
 
 -- ============================================================================
