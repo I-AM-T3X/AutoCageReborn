@@ -434,6 +434,10 @@ f:SetScript("OnEvent", function(self, event, ...)
         
     elseif event == "CHAT_MSG_SYSTEM" and State.db.enabled and not State.isProcessing then
         local msg = ...
+        
+        -- Safety check: ensure msg exists and is a string
+        if not msg or type(msg) ~= "string" then return end
+        
         local speciesID = msg:match(petCagedPattern)
         
         if speciesID then
