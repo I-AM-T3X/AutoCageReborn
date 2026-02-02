@@ -154,7 +154,7 @@ local L = {
         ["frFR"] = "Aucun familier en double éligible trouvé.",
         ["deDE"] = "Keine geeigneten doppelten Haustiere gefunden.",
         ["enUS"] = "No eligible duplicate pets found.",
-        ["itIT"] = "Nessuna mascotta duplicata idonea trovata.",
+        ["itIT"] = "Nessuna mascotte duplicata idonea trovata.",
         ["koKR"] = "적합한 중복 애완 동물을 찾을 수 없습니다.",
         ["zhCN"] = "未找到符合条件的重复宠物。",
         ["zhTW"] = "未找到符合條件的重複寵物。",
@@ -176,6 +176,20 @@ local L = {
         ["esES"] = "Poniendo %d mascota(s) en jaula...",
         ["esMX"] = "Poniendo %d mascota(s) en jaula...",
         ["ptBR"] = "Colocando %d animal(is) em gaiola..."
+    },
+    
+    INVENTORY_FULL = {
+        ["frFR"] = "Inventaire plein ! Impossible de créer des cages.",
+        ["deDE"] = "Inventar voll! Käfige können nicht erstellt werden.",
+        ["enUS"] = "Inventory full! Cannot create pet cages.",
+        ["itIT"] = "Inventario pieno! Impossibile creare gabbie.",
+        ["koKR"] = "가방이 가득 찼습니다! 애완동물 우리를 만들 수 없습니다.",
+        ["zhCN"] = "背包已满！无法创建宠物笼。",
+        ["zhTW"] = "背包已滿！無法創建寵物籠。",
+        ["ruRU"] = "Инвентарь полон! Невозможно создать клетки.",
+        ["esES"] = "¡Inventario lleno! No se pueden crear jaulas.",
+        ["esMX"] = "¡Inventario lleno! No se pueden crear jaulas.",
+        ["ptBR"] = "Inventário cheio! Não é possível criar gaiolas."
     },
     
     COMMAND_AVAILABLE = {
@@ -274,6 +288,17 @@ local function RestoreSearch()
     C_PetJournal.SetSearchFilter(State.originalSearch or "")
 end
 
+local function HasFreeBagSpace()
+    for bag = 0, 4 do  -- Backpack (0) + 4 bags
+        local freeSlots, bagType = C_Container.GetContainerNumFreeSlots(bag)
+        -- bagType 0 = normal bag, not profession bag
+        if bagType == 0 and freeSlots > 0 then
+            return true
+        end
+    end
+    return false
+end
+
 -- ============================================================================
 -- Core Logic
 -- ============================================================================
@@ -284,6 +309,15 @@ local function ProcessQueue()
             State.isProcessing = false
             RestoreSearch()
         end
+        return
+    end
+    
+    -- Check bag space before attempting to cage
+    if not HasFreeBagSpace() then
+        Print(GetString(L.INVENTORY_FULL), "cffff0000")
+        State.cageQueue = {}  -- Clear remaining queue
+        State.isProcessing = false
+        RestoreSearch()
         return
     end
     
