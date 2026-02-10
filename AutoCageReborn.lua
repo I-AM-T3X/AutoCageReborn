@@ -290,9 +290,9 @@ end
 
 local function HasFreeBagSpace()
     for bag = 0, 4 do  -- Backpack (0) + 4 bags
-        local freeSlots, bagType = C_Container.GetContainerNumFreeSlots(bag)
-        -- bagType 0 = normal bag, not profession bag
-        if bagType == 0 and freeSlots > 0 then
+        local freeSlots, bagFamily = C_Container.GetContainerNumFreeSlots(bag)
+        -- bagFamily 0 = normal bag
+        if bagFamily == 0 and freeSlots > 0 then
             return true
         end
     end
@@ -322,8 +322,10 @@ local function ProcessQueue()
     end
     
     local petID = table.remove(State.cageQueue, 1)
-    local speciesID, customName, level, xp, maxXp, displayID, favorite, name = C_PetJournal.GetPetInfoByPetID(petID)
-    local isTradeable = select(16, C_PetJournal.GetPetInfoByPetID(petID))
+    -- Get all info in single call: speciesID, customName, level, xp, maxXp, displayID, favorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, isTradeable, isUnique, obtainable
+    local info = {C_PetJournal.GetPetInfoByPetID(petID)}
+    local speciesID, level, favorite, name = info[1], info[3], info[7], info[8]
+    local isTradeable = info[16]
     
     if speciesID then
         if level == CONSTANTS.MAX_LEVEL and not favorite and isTradeable then
@@ -363,8 +365,11 @@ function AutoCageReborn:ScanAndCage(targetSpeciesID)
     Print(GetString(L.CAGING), "cffffff00")
     
     for i = 1, numOwned do
-        local petID, speciesID, owned, customName, level, favorite, isRevoked, speciesName = C_PetJournal.GetPetInfoByIndex(i)
-        local isTradeable = select(16, C_PetJournal.GetPetInfoByIndex(i))
+        -- Single API call per pet: petID, speciesID, owned, customName, level, favorite, isRevoked, speciesName, icon, petType, companionID, tooltip, description, isWild, canBattle, isTradeable, isUnique, obtainable
+        local info = {C_PetJournal.GetPetInfoByIndex(i)}
+        local petID, speciesID = info[1], info[2]
+        local level, favorite = info[5], info[6]
+        local isTradeable = info[16]
         
         if not targetSpeciesID or speciesID == targetSpeciesID then
             if seenSpecies[speciesID] then
@@ -392,8 +397,9 @@ function AutoCageReborn:Toggle()
     local msg = State.db.enabled and L.AUTO_ENABLED or L.AUTO_DISABLED
     Print(GetString(msg), State.db.enabled and "cff00ff00" or "cffff0000")
     
-    if _G["AutoCageReborn_CheckButton"] then
-        _G["AutoCageReborn_CheckButton"]:SetChecked(State.db.enabled)
+    local checkbox = _G["AutoCageReborn_CheckButton"]
+    if checkbox then
+        checkbox:SetChecked(State.db.enabled)
     end
 end
 
@@ -401,7 +407,7 @@ end
 -- UI Creation
 -- ============================================================================
 function AutoCageReborn:InitUI()
-    if State.hooksInstalled then return end
+    if State.hooksInstalled or not PetJournal then return end
     
     C_Timer.After(1.0, function()
         if State.hooksInstalled then return end
@@ -506,6 +512,11 @@ f:SetScript("OnEvent", function(self, event, ...)
         end
         
     elseif event == "CHAT_MSG_SYSTEM" and State.db.enabled and not State.isProcessing then
+        -- Disable only in 5-man dungeons (party instances)
+        -- Allow in raids, battlegrounds, arenas, scenarios, and open world
+        local inInstance, instanceType = IsInInstance()
+        if inInstance and instanceType == "party" then return end
+        
         local msg = ...
         
         -- Safety check: ensure msg is a string before using string methods
