@@ -512,10 +512,12 @@ f:SetScript("OnEvent", function(self, event, ...)
         end
         
     elseif event == "CHAT_MSG_SYSTEM" and State.db.enabled and not State.isProcessing then
-        -- Disable only in 5-man dungeons (party instances)
-        -- Allow in raids, battlegrounds, arenas, scenarios, and open world
-        local inInstance, instanceType = IsInInstance()
-        if inInstance and instanceType == "party" then return end
+        -- Disable auto-caging in ALL instances:
+        -- "party" (5-man dungeons), "raid" (raids), "pvp" (battlegrounds), 
+        -- "arena" (arenas), "scenario" (scenarios)
+        -- Only allow in "none" (open world)
+        local _, instanceType = IsInInstance()
+        if instanceType ~= "none" then return end
         
         local msg = ...
         
