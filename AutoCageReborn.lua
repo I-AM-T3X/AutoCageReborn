@@ -371,13 +371,16 @@ function AutoCageReborn:ScanAndCage(targetSpeciesID)
         local level, favorite = info[5], info[6]
         local isTradeable = info[16]
         
-        if not targetSpeciesID or speciesID == targetSpeciesID then
-            if seenSpecies[speciesID] then
-                if level == CONSTANTS.MAX_LEVEL and not favorite and isTradeable then
-                    table.insert(State.cageQueue, petID)
+        -- Safety check: skip if we got invalid/incomplete data from the API
+        if speciesID and petID then
+            if not targetSpeciesID or speciesID == targetSpeciesID then
+                if seenSpecies[speciesID] then
+                    if level == CONSTANTS.MAX_LEVEL and not favorite and isTradeable then
+                        table.insert(State.cageQueue, petID)
+                    end
+                else
+                    seenSpecies[speciesID] = true
                 end
-            else
-                seenSpecies[speciesID] = true
             end
         end
     end
