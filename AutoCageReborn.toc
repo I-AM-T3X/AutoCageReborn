@@ -1,8 +1,8 @@
-## Interface: 120000
+## Interface: 120001, 120005
 ## Title: Auto Cage Reborn
 ## Notes: Automatically cage duplicate battle pets
 ## Author: I_AM_T3X
-## Version: 1.0.6
+## Version: 1.0.7
 ## SavedVariables: AutoCageRebornDB
 ## Dependencies: Blizzard_Collections
 
